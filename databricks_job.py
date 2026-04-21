@@ -1,5 +1,5 @@
-import subprocess, sys
-subprocess.run([sys.executable, "-m", "pip", "install", "."], check=True)
+import sys, os
+sys.path.insert(0, os.path.join(os.getcwd(), "src"))
 
 import yaml
 import mlflow
