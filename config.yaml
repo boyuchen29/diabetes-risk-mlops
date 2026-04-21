@@ -13,8 +13,7 @@ model:
   max_iter: 200
   random_state: 42
 
-tracking:
-  enabled: false
-  tracking_uri: null
-  experiment_name: "diabetes-risk-training"
-  artifact_path: "model"
+mlflow:
+  experiment_name: "/Users/boyu.chen@neudesic.com/risk-score"
+  model_name: "diabetes-risk-classifier"
+  tracking_uri: "databricks"
