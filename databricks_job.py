@@ -1,5 +1,5 @@
-import subprocess
-subprocess.run(["pip", "install", "-e", "."], check=True)
+import subprocess, sys
+subprocess.run([sys.executable, "-m", "pip", "install", "."], check=True)
 
 import yaml
 import mlflow
