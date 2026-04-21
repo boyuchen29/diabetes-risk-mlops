@@ -1,5 +1,21 @@
-import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "src"))
+import sys
+import inspect
+from pathlib import Path
+
+
+def _script_dir() -> Path:
+    if "__file__" in globals():
+        return Path(__file__).resolve().parent
+
+    frame = inspect.currentframe()
+    if frame is None or frame.f_code.co_filename is None:
+        raise RuntimeError("Unable to determine script location")
+
+    return Path(frame.f_code.co_filename).resolve().parent
+
+
+_root = _script_dir()
+sys.path.insert(0, str(_root / "src"))
 
 import yaml
 import mlflow
@@ -9,7 +25,7 @@ from risk_score.train import run_training
 from risk_score.score import build_risk_scores
 from risk_score.mlflow_utils import log_run_params, log_run_metrics, log_and_register_model
 
-CONFIG_PATH = "config.yaml"
+CONFIG_PATH = _root / "config.yaml"
 
 with open(CONFIG_PATH) as f:
     config = yaml.safe_load(f)
