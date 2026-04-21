@@ -16,6 +16,7 @@ with open(CONFIG_PATH) as f:
 
 mlflow_cfg = config["mlflow"]
 mlflow.set_tracking_uri(mlflow_cfg["tracking_uri"])
+mlflow.set_registry_uri("databricks")
 mlflow.set_experiment(mlflow_cfg["experiment_name"])
 
 with mlflow.start_run():
