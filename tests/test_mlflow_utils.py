@@ -1,10 +1,13 @@
 import pytest
 import mlflow
+import json
+import numpy as np
 from risk_score.mlflow_utils import (
     _flatten_config,
     log_run_params,
     log_run_metrics,
     log_and_register_model,
+    log_scoring_artifacts,
 )
 
 
@@ -46,6 +49,22 @@ def test_log_run_metrics_skips_non_scalar(tmp_path):
     assert "auc" in metrics
     assert metrics["auc"] == pytest.approx(0.85)
     assert "confusion_matrix" not in metrics
+
+
+def test_log_scoring_artifacts(tmp_path):
+    mlflow.set_tracking_uri(f"sqlite:///{tmp_path}/mlflow.db")
+    mlflow.set_experiment("test-artifacts")
+
+    scores = {"bp": {"low": 0.0, "normal": 500.0, "high": 1000.0}}
+    weights = np.array([0.28, 0.35, 0.18, 0.19])
+
+    with mlflow.start_run() as run:
+        log_scoring_artifacts(scores, weights)
+
+    client = mlflow.tracking.MlflowClient()
+    artifacts = [a.path for a in client.list_artifacts(run.info.run_id)]
+    assert "scores.json" in artifacts
+    assert "weights.json" in artifacts
 
 
 def test_log_and_register_model_returns_run_id(tmp_path):
