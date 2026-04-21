@@ -69,7 +69,7 @@ def cmd_train(args):
             log_run_metrics(metrics)
             run_id = log_and_register_model(
                 model,
-                artifact_path="model",
+                name="model",
                 model_name=mlflow_cfg["model_name"],
                 X_sample=X_test_enc2,
             )

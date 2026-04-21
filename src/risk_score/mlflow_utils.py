@@ -14,10 +14,10 @@ def log_run_metrics(metrics: dict) -> None:
         mlflow.log_metrics(scalar_metrics)
 
 
-def log_and_register_model(model, *, artifact_path: str, model_name: str, X_sample) -> str:
-    mlflow.sklearn.log_model(model, artifact_path=artifact_path, input_example=X_sample)
+def log_and_register_model(model, *, name: str, model_name: str, X_sample) -> str:
+    mlflow.sklearn.log_model(model, name=name, input_example=X_sample)
     run_id = mlflow.active_run().info.run_id
-    mlflow.register_model(f"runs:/{run_id}/{artifact_path}", model_name)
+    mlflow.register_model(f"runs:/{run_id}/{name}", model_name)
     return run_id
 
 
