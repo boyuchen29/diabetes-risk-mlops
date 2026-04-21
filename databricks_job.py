@@ -23,7 +23,7 @@ import mlflow
 from risk_score.data import build_dataset
 from risk_score.train import run_training
 from risk_score.score import build_risk_scores
-from risk_score.mlflow_utils import log_run_params, log_run_metrics, log_and_register_model
+from risk_score.mlflow_utils import log_run_params, log_run_metrics, log_and_register_model, log_scoring_artifacts
 
 CONFIG_PATH = _root / "config.yaml"
 
@@ -62,6 +62,8 @@ with mlflow.start_run():
     scores, weights, R = build_risk_scores(
         model, df_categorized, best_subsets, onehot_best, y_encoded_all, config
     )
+
+    log_scoring_artifacts(scores, weights)
 
     run_id = log_and_register_model(
         model,

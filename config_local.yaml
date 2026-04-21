@@ -1,0 +1,14 @@
+data:
+  path: "data/diabetes.tab.txt"
+  url: "https://www4.stat.ncsu.edu/~boos/var.select/diabetes.tab.txt"
+  target_percentile: 75
+  test_size: 0.2
+  random_state: 42
+
+feature_selection:
+  mode: "manual"
+  best_subsets: ["bp", "bmi", "s4", "s5"]
+
+model:
+  max_iter: 200
+  random_state: 42

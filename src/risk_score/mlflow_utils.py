@@ -1,4 +1,6 @@
 import json
+import tempfile
+from pathlib import Path
 
 import mlflow
 import mlflow.sklearn
@@ -19,6 +21,15 @@ def log_and_register_model(model, *, name: str, model_name: str, X_sample) -> st
     run_id = mlflow.active_run().info.run_id
     mlflow.register_model(f"runs:/{run_id}/{name}", model_name)
     return run_id
+
+
+def log_scoring_artifacts(scores: dict, weights) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        (tmp_path / "scores.json").write_text(json.dumps(scores))
+        (tmp_path / "weights.json").write_text(json.dumps(list(weights)))
+        mlflow.log_artifact(str(tmp_path / "scores.json"))
+        mlflow.log_artifact(str(tmp_path / "weights.json"))
 
 
 def _flatten_config(config: dict, prefix: str = "") -> dict:
