@@ -61,7 +61,7 @@ def test_log_and_register_model_returns_run_id(tmp_path):
 
     with mlflow.start_run():
         run_id = log_and_register_model(
-            model, artifact_path="model", model_name="test-model"
+            model, artifact_path="model", model_name="test-model", X_sample=X
         )
 
     assert isinstance(run_id, str) and len(run_id) > 0

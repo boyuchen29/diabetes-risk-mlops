@@ -50,6 +50,7 @@ with mlflow.start_run():
         model,
         artifact_path="model",
         model_name=mlflow_cfg["model_name"],
+        X_sample=X_test_enc2,
     )
 
     print(f"Run id            : {run_id}")
