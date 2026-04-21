@@ -1,0 +1,11 @@
+scikit-learn
+scipy
+tabulate
+matplotlib
+seaborn
+requests
+numpy
+pandas
+mlflow
+ipykernel
+jupyter
