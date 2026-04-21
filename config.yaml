@@ -15,5 +15,5 @@ model:
 
 mlflow:
   experiment_name: "/Users/boyu.chen@neudesic.com/risk-score"
-  model_name: "risk-score-model"
+  model_name: "mlops_demo.diabetes_risk_score.risk-score-model"
   tracking_uri: "databricks"
