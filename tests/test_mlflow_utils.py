@@ -57,9 +57,10 @@ def test_log_scoring_artifacts(tmp_path):
 
     scores = {"bp": {"low": 0.0, "normal": 500.0, "high": 1000.0}}
     weights = np.array([0.28, 0.35, 0.18, 0.19])
+    best_subsets = ["bp", "bmi", "s4", "s5"]
 
     with mlflow.start_run() as run:
-        log_scoring_artifacts(scores, weights)
+        log_scoring_artifacts(scores, weights, best_subsets)
 
     client = mlflow.tracking.MlflowClient()
     artifacts = [a.path for a in client.list_artifacts(run.info.run_id)]

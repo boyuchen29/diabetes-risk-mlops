@@ -23,11 +23,12 @@ def log_and_register_model(model, *, name: str, model_name: str, X_sample) -> st
     return run_id
 
 
-def log_scoring_artifacts(scores: dict, weights) -> None:
+def log_scoring_artifacts(scores: dict, weights, best_subsets: list[str]) -> None:
+    weights_dict = {feature: float(w) for feature, w in zip(best_subsets, weights)}
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         (tmp_path / "scores.json").write_text(json.dumps(scores))
-        (tmp_path / "weights.json").write_text(json.dumps(list(weights)))
+        (tmp_path / "weights.json").write_text(json.dumps(weights_dict))
         mlflow.log_artifact(str(tmp_path / "scores.json"))
         mlflow.log_artifact(str(tmp_path / "weights.json"))
 

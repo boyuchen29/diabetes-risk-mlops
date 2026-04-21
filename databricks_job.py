@@ -63,7 +63,7 @@ with mlflow.start_run():
         model, df_categorized, best_subsets, onehot_best, y_encoded_all, config
     )
 
-    log_scoring_artifacts(scores, weights)
+    log_scoring_artifacts(scores, weights, best_subsets)
 
     run_id = log_and_register_model(
         model,
