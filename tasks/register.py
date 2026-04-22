@@ -1,6 +1,5 @@
 import sys
 import inspect
-import pickle
 from pathlib import Path
 
 
@@ -20,6 +19,7 @@ import yaml
 import mlflow
 from risk_score.score import build_risk_scores
 from risk_score.mlflow_utils import log_scoring_artifacts, log_and_register_model
+from tasks.io_utils import load_pickle
 
 
 def _get_param(key: str, default):
@@ -57,11 +57,11 @@ if __name__ == "__main__" or "__file__" not in globals():
     DATASET_PATH = "/dbfs/tmp/diabetes-risk/pipeline_data/dataset.pkl"
     TRAIN_OUTPUT_PATH = "/dbfs/tmp/diabetes-risk/pipeline_data/train_output.pkl"
 
-    with open(DATASET_PATH, "rb") as f:
-        dataset = pickle.load(f)
-    with open(TRAIN_OUTPUT_PATH, "rb") as f:
-        train_output = pickle.load(f)
+    dataset = load_pickle(DATASET_PATH, dbutils=dbutils)  # noqa: F821
+    train_output = load_pickle(TRAIN_OUTPUT_PATH, dbutils=dbutils)  # noqa: F821
 
+    model = train_output["model"]
+    best_subsets = train_output["best_subsets"]
     X_test_enc2 = train_output["X_test_enc2"]
     metrics = train_output["metrics"]
 
@@ -72,7 +72,7 @@ if __name__ == "__main__" or "__file__" not in globals():
     with mlflow.start_run(run_id=run_id):
         print("Computing risk scores...")
         scores, weights, R = run_register(dataset, train_output, config)
-        log_scoring_artifacts(scores, weights, train_output["best_subsets"])
+        log_scoring_artifacts(scores, weights, best_subsets)
 
         run_id_out = log_and_register_model(
             model,
