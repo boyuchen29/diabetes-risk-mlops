@@ -81,3 +81,12 @@ def test_root_no_auth_returns_200(client):
     resp = client.get("/")
     assert resp.status_code == 200
     assert resp.json()["name"] == "diabetes-risk-api"
+
+
+def test_predict_unset_api_key_returns_401(monkeypatch):
+    monkeypatch.setenv("MLFLOW_RUN_ID", "fake-run-id")
+    monkeypatch.delenv("API_KEY", raising=False)
+    monkeypatch.setattr(Scorer, "from_mlflow", staticmethod(lambda run_id: Scorer(SCORES, WEIGHTS, SCHEMA)))
+    with TestClient(app) as c:
+        resp = c.get("/predict/weights", headers={"Authorization": "Bearer "})
+        assert resp.status_code == 401

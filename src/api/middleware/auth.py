@@ -9,6 +9,6 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         if request.url.path.startswith("/predict"):
             api_key = os.environ.get("API_KEY", "")
             auth = request.headers.get("Authorization", "")
-            if auth != f"Bearer {api_key}":
+            if not api_key or auth != f"Bearer {api_key}":
                 return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
         return await call_next(request)
