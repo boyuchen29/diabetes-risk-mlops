@@ -52,7 +52,10 @@ def build_dataset(config: dict) -> tuple:
 def _load_raw_data(data_config: dict) -> pd.DataFrame:
     data_path = data_config.get("path")
     if data_path:
-        return pd.read_csv(Path(data_path), sep="\t")
+        candidate_paths = _candidate_data_paths(data_path)
+        for candidate in candidate_paths:
+            if candidate.exists():
+                return pd.read_csv(candidate, sep="\t")
 
     data_url = data_config.get("url")
     if not data_url:
@@ -61,6 +64,26 @@ def _load_raw_data(data_config: dict) -> pd.DataFrame:
     response = requests.get(data_url, timeout=30)
     response.raise_for_status()
     return pd.read_csv(StringIO(response.text), sep="\t")
+
+
+def _candidate_data_paths(data_path: str) -> list[Path]:
+    path = Path(data_path)
+    if path.is_absolute():
+        return [path]
+
+    repo_root = Path(__file__).resolve().parents[2]
+    candidates = [path, repo_root / path]
+
+    seen: set[Path] = set()
+    unique_candidates = []
+    for candidate in candidates:
+        resolved = candidate.resolve(strict=False)
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique_candidates.append(candidate)
+
+    return unique_candidates
 
 
 def _random_oversample(
