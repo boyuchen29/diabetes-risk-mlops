@@ -25,7 +25,7 @@ from risk_score.mlflow_utils import log_run_params
 def _get_param(key: str, default):
     try:
         val = dbutils.widgets.get(key)  # noqa: F821
-        return val if val else str(default)
+        return val.strip() if val.strip() else str(default)
     except Exception:
         return str(default)
 
