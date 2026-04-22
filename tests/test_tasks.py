@@ -24,3 +24,29 @@ def test_ingest_saves_dataset(tmp_path):
     with open(output_path, "rb") as f:
         dataset_pickled = pickle.load(f)
     assert len(dataset_pickled) == 10
+
+
+def test_train_produces_model_and_metrics(tmp_path):
+    import pickle
+    from tasks.ingest import run_ingest
+    from tasks.train import run_train
+
+    dataset_path = str(tmp_path / "dataset.pkl")
+    train_output_path = str(tmp_path / "train_output.pkl")
+
+    dataset = run_ingest(CONFIG, dataset_path)
+
+    train_output = run_train(dataset, CONFIG, train_output_path)
+
+    assert Path(train_output_path).exists()
+    assert "model" in train_output
+    assert "metrics" in train_output
+    assert 0.0 <= train_output["metrics"]["auc"] <= 1.0
+    assert "best_subsets" in train_output
+    assert len(train_output["best_subsets"]) > 0
+    assert "onehot_best" in train_output
+    assert "X_test_enc2" in train_output
+
+    with open(train_output_path, "rb") as f:
+        train_output_pickled = pickle.load(f)
+    assert set(train_output_pickled.keys()) == {"model", "best_subsets", "onehot_best", "X_test_enc2", "metrics"}
