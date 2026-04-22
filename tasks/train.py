@@ -68,6 +68,7 @@ if __name__ == "__main__" or "__file__" not in globals():
 
     with mlflow.start_run(run_id=run_id):
         print("Running feature selection and training model...")
+        print(config["feature_selection"]["best_subsets"])
         train_output = run_train(
             dataset,
             config,
