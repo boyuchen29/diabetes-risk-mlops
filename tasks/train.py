@@ -1,6 +1,5 @@
 import sys
 import inspect
-import pickle
 from pathlib import Path
 
 
@@ -20,6 +19,7 @@ import yaml
 import mlflow
 from risk_score.train import run_training
 from risk_score.mlflow_utils import log_run_metrics
+from tasks.io_utils import dump_pickle, load_pickle
 
 
 def _get_param(key: str, default):
@@ -30,7 +30,7 @@ def _get_param(key: str, default):
         return str(default)
 
 
-def run_train(dataset: tuple, config: dict, output_path: str) -> dict:
+def run_train(dataset: tuple, config: dict, output_path: str, *, dbutils_client=None) -> dict:
     (X_train_enc, X_test_enc, y_train_enc, y_test_enc,
      X_test_raw, X_train_raw, onehot, label_encoder,
      df_categorized, y_encoded_all) = dataset
@@ -55,9 +55,7 @@ def run_train(dataset: tuple, config: dict, output_path: str) -> dict:
         "metrics": metrics,
     }
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "wb") as f:
-        pickle.dump(train_output, f)
+    dump_pickle(train_output, output_path, dbutils=dbutils_client)
 
     return train_output
 
@@ -85,8 +83,7 @@ if __name__ == "__main__" or "__file__" not in globals():
     DATASET_PATH = "/dbfs/tmp/diabetes-risk/pipeline_data/dataset.pkl"
     TRAIN_OUTPUT_PATH = "/dbfs/tmp/diabetes-risk/pipeline_data/train_output.pkl"
 
-    with open(DATASET_PATH, "rb") as f:
-        dataset = pickle.load(f)
+    dataset = load_pickle(DATASET_PATH, dbutils=dbutils)  # noqa: F821
 
     mlflow_cfg = config["mlflow"]
     mlflow.set_tracking_uri(mlflow_cfg["tracking_uri"])
@@ -94,7 +91,12 @@ if __name__ == "__main__" or "__file__" not in globals():
 
     with mlflow.start_run(run_id=run_id):
         print("Running feature selection and training model...")
-        train_output = run_train(dataset, config, TRAIN_OUTPUT_PATH)
+        train_output = run_train(
+            dataset,
+            config,
+            TRAIN_OUTPUT_PATH,
+            dbutils_client=dbutils,  # noqa: F821
+        )
         log_run_metrics(train_output["metrics"])
         print(f"AUC-ROC: {train_output['metrics']['auc']:.4f}")
         print(f"Train output saved to {TRAIN_OUTPUT_PATH}")

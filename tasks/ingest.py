@@ -1,6 +1,5 @@
 import sys
 import inspect
-import pickle
 from pathlib import Path
 
 
@@ -20,6 +19,7 @@ import yaml
 import mlflow
 from risk_score.data import build_dataset
 from risk_score.mlflow_utils import log_run_params
+from tasks.io_utils import dump_pickle
 
 
 def _get_param(key: str, default):
@@ -30,11 +30,9 @@ def _get_param(key: str, default):
         return str(default)
 
 
-def run_ingest(config: dict, output_path: str) -> tuple:
+def run_ingest(config: dict, output_path: str, *, dbutils_client=None) -> tuple:
     dataset = build_dataset(config)
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "wb") as f:
-        pickle.dump(dataset, f)
+    dump_pickle(dataset, output_path, dbutils=dbutils_client)
     return dataset
 
 
@@ -66,7 +64,7 @@ if __name__ == "__main__" or "__file__" not in globals():
     with mlflow.start_run() as run:
         log_run_params(config)
         print("Loading and preparing data...")
-        run_ingest(config, DATASET_PATH)
+        run_ingest(config, DATASET_PATH, dbutils_client=dbutils)  # noqa: F821
         print(f"Dataset saved to {DATASET_PATH}")
         dbutils.jobs.taskValues.set(key="run_id", value=run.info.run_id)  # noqa: F821
         print(f"Run id: {run.info.run_id}")
