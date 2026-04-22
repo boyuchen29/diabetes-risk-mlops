@@ -24,13 +24,27 @@ def log_and_register_model(model, *, name: str, model_name: str, X_sample) -> st
 
 
 def log_scoring_artifacts(scores: dict, weights, best_subsets: list[str]) -> None:
+    from risk_score.data import CATEGORIZATION_SCHEMA
     weights_dict = {feature: float(w) for feature, w in zip(best_subsets, weights)}
+    schema_serializable = _serialize_schema(CATEGORIZATION_SCHEMA)
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         (tmp_path / "scores.json").write_text(json.dumps(scores))
         (tmp_path / "weights.json").write_text(json.dumps(weights_dict))
+        (tmp_path / "categorization_schema.json").write_text(json.dumps(schema_serializable))
         mlflow.log_artifact(str(tmp_path / "scores.json"))
         mlflow.log_artifact(str(tmp_path / "weights.json"))
+        mlflow.log_artifact(str(tmp_path / "categorization_schema.json"))
+
+
+def _serialize_schema(schema: list[dict]) -> list[dict]:
+    result = []
+    for spec in schema:
+        s = dict(spec)
+        if "bins" in s:
+            s["bins"] = [1e308 if b == float("inf") else (-1e308 if b == float("-inf") else b) for b in s["bins"]]
+        result.append(s)
+    return result
 
 
 def _flatten_config(config: dict, prefix: str = "") -> dict:

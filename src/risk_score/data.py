@@ -52,7 +52,10 @@ def build_dataset(config: dict) -> tuple:
 def _load_raw_data(data_config: dict) -> pd.DataFrame:
     data_path = data_config.get("path")
     if data_path:
-        return pd.read_csv(Path(data_path), sep="\t")
+        candidate_paths = _candidate_data_paths(data_path)
+        for candidate in candidate_paths:
+            if candidate.exists():
+                return pd.read_csv(candidate, sep="\t")
 
     data_url = data_config.get("url")
     if not data_url:
@@ -61,6 +64,18 @@ def _load_raw_data(data_config: dict) -> pd.DataFrame:
     response = requests.get(data_url, timeout=30)
     response.raise_for_status()
     return pd.read_csv(StringIO(response.text), sep="\t")
+
+
+def _candidate_data_paths(data_path: str) -> list[Path]:
+    path = Path(data_path)
+    if path.is_absolute():
+        return [path]
+
+    repo_root = Path(__file__).resolve().parents[2]
+    from_root = repo_root / path
+    if from_root.resolve(strict=False) == path.resolve(strict=False):
+        return [path]
+    return [path, from_root]
 
 
 def _random_oversample(
@@ -88,26 +103,51 @@ def _random_oversample(
     return X_balanced, y_balanced
 
 
-def _categorize_features(df: pd.DataFrame) -> pd.DataFrame:
+CATEGORIZATION_SCHEMA = [
+    {"feature": "age", "column": "AGE", "type": "cut",
+     "bins": [-np.inf, 25, 35, 45, 55, np.inf],
+     "labels": ["age_25", "age_35", "age_45", "age_55", "age_65"]},
+    {"feature": "sex", "column": "SEX", "type": "threshold",
+     "threshold": 1, "gt_label": "male", "le_label": "female"},
+    {"feature": "bmi", "column": "BMI", "type": "cut",
+     "bins": [-np.inf, 18.5, 25, 30, np.inf],
+     "labels": ["underweight", "normal", "overweight", "obese"]},
+    {"feature": "bp", "column": "BP", "type": "cut",
+     "bins": [-np.inf, 80, 90, 120, np.inf],
+     "labels": ["low", "normal", "elevated", "high"]},
+    {"feature": "s1", "column": "S1", "type": "cut",
+     "bins": [-np.inf, 150, 200, 240, np.inf],
+     "labels": ["optimal", "normal", "borderline", "high"]},
+    {"feature": "s2", "column": "S2", "type": "cut",
+     "bins": [-np.inf, 100, 130, 160, np.inf],
+     "labels": ["optimal", "normal", "borderline", "high"]},
+    {"feature": "s3", "column": "S3", "type": "cut",
+     "bins": [-np.inf, 40, 60, np.inf],
+     "labels": ["low", "normal", "high"]},
+    {"feature": "s4", "column": "S4", "type": "cut",
+     "bins": [-np.inf, 3.5, 5, np.inf],
+     "labels": ["optimal", "normal", "high"]},
+    {"feature": "s5", "column": "S5", "type": "cut",
+     "bins": [-np.inf, 4.3, 4.7, np.inf],
+     "labels": ["low", "normal", "high"]},
+    {"feature": "s6", "column": "S6", "type": "cut",
+     "bins": [-np.inf, 90, 110, np.inf],
+     "labels": ["normal", "prediabetes", "diabetes"]},
+]
+
+
+def categorize_features(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame()
-    out["age"] = pd.cut(df["AGE"], bins=[-np.inf, 25, 35, 45, 55, np.inf],
-                        labels=["age_25", "age_35", "age_45", "age_55", "age_65"])
-    out["sex"] = np.where(df["SEX"] > 1, "male", "female")
-    out["bmi"] = pd.cut(df["BMI"], bins=[-np.inf, 18.5, 25, 30, np.inf],
-                        labels=["underweight", "normal", "overweight", "obese"])
-    out["bp"] = pd.cut(df["BP"], bins=[-np.inf, 80, 90, 120, np.inf],
-                       labels=["low", "normal", "elevated", "high"])
-    out["s1"] = pd.cut(df["S1"], bins=[-np.inf, 150, 200, 240, np.inf],
-                       labels=["optimal", "normal", "borderline", "high"])
-    out["s2"] = pd.cut(df["S2"], bins=[-np.inf, 100, 130, 160, np.inf],
-                       labels=["optimal", "normal", "borderline", "high"])
-    out["s3"] = pd.cut(df["S3"], bins=[-np.inf, 40, 60, np.inf],
-                       labels=["low", "normal", "high"])
-    out["s4"] = pd.cut(df["S4"], bins=[-np.inf, 3.5, 5, np.inf],
-                       labels=["optimal", "normal", "high"])
-    out["s5"] = pd.cut(df["S5"], bins=[-np.inf, 4.3, 4.7, np.inf],
-                       labels=["low", "normal", "high"])
-    out["s6"] = pd.cut(df["S6"], bins=[-np.inf, 90, 110, np.inf],
-                       labels=["normal", "prediabetes", "diabetes"])
+    for spec in CATEGORIZATION_SCHEMA:
+        col = df[spec["column"]]
+        if spec["type"] == "cut":
+            out[spec["feature"]] = pd.cut(col, bins=spec["bins"], labels=spec["labels"])
+        else:
+            out[spec["feature"]] = np.where(col > spec["threshold"], spec["gt_label"], spec["le_label"])
+    return out
+
+
+def _categorize_features(df: pd.DataFrame) -> pd.DataFrame:
+    out = categorize_features(df)
     out["y"] = np.where(df["Y"] == 1, "worse", "better")
     return out
