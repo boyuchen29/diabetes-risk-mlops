@@ -1,13 +1,18 @@
-from pathlib import Path
+import yaml
 
 from tasks.config_utils import load_runtime_config
 
 
-def test_load_runtime_config_applies_cli_overrides():
-    repo_root = Path(__file__).resolve().parents[1]
+def test_load_runtime_config_applies_cli_overrides(tmp_path):
+    config_data = {
+        "feature_selection": {"mode": "auto", "best_subsets": ["age", "sex"]},
+        "data": {"test_size": 0.2, "random_state": 42},
+        "model": {"max_iter": 100, "random_state": 0},
+    }
+    (tmp_path / "config.yaml").write_text(yaml.dump(config_data))
 
     config = load_runtime_config(
-        repo_root,
+        tmp_path,
         argv=[
             "--feature-selection-mode", "manual",
             "--feature-selection-best-subsets", "bp,bmi,s1,s5",

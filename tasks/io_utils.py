@@ -16,7 +16,9 @@ def dump_pickle(payload, output_path: str, *, dbutils=None) -> None:
         except Exception:
             pass
 
-        with tempfile.TemporaryDirectory(dir=_workspace_temp_root()) as tmp_dir:
+        workspace_tmp = Path("/Workspace/tmp")
+        workspace_tmp.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=workspace_tmp) as tmp_dir:
             local_path = Path(tmp_dir) / "payload.pkl"
             with open(local_path, "wb") as handle:
                 pickle.dump(payload, handle)
@@ -35,7 +37,9 @@ def load_pickle(input_path: str, *, dbutils=None):
             raise ValueError("dbutils is required for DBFS paths")
 
         input_uri = _to_dbfs_uri(input_path)
-        with tempfile.TemporaryDirectory(dir=_workspace_temp_root()) as tmp_dir:
+        workspace_tmp = Path("/Workspace/tmp")
+        workspace_tmp.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=workspace_tmp) as tmp_dir:
             local_path = Path(tmp_dir) / "payload.pkl"
             dbutils.fs.cp(input_uri, f"file:{local_path}")
             with open(local_path, "rb") as handle:
@@ -57,7 +61,3 @@ def _to_dbfs_uri(path: str) -> str:
     raise ValueError(f"Unsupported DBFS path: {path}")
 
 
-def _workspace_temp_root() -> str:
-    workspace_tmp = Path("/Workspace/tmp")
-    workspace_tmp.mkdir(parents=True, exist_ok=True)
-    return str(workspace_tmp)
