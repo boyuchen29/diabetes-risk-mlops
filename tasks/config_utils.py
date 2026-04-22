@@ -1,8 +1,11 @@
 import argparse
+import logging
 import sys
 from pathlib import Path
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 def load_runtime_config(repo_root: Path, *, dbutils_client=None, argv=None) -> dict:
@@ -86,7 +89,7 @@ def _resolve_param(cli_value, widget_key: str, default, *, dbutils_client=None) 
             widget_value = dbutils_client.widgets.get(widget_key)
             if widget_value.strip():
                 return widget_value.strip()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Databricks widget %r not available: %s", widget_key, exc)
 
     return str(default)

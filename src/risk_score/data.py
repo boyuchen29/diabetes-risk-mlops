@@ -72,18 +72,10 @@ def _candidate_data_paths(data_path: str) -> list[Path]:
         return [path]
 
     repo_root = Path(__file__).resolve().parents[2]
-    candidates = [path, repo_root / path]
-
-    seen: set[Path] = set()
-    unique_candidates = []
-    for candidate in candidates:
-        resolved = candidate.resolve(strict=False)
-        if resolved in seen:
-            continue
-        seen.add(resolved)
-        unique_candidates.append(candidate)
-
-    return unique_candidates
+    from_root = repo_root / path
+    if from_root.resolve(strict=False) == path.resolve(strict=False):
+        return [path]
+    return [path, from_root]
 
 
 def _random_oversample(

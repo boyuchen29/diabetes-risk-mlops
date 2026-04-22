@@ -17,3 +17,7 @@ mlflow:
   experiment_name: "/Users/boyu.chen@neudesic.com/risk-score"
   model_name: "diabetes-risk-classifier"
   tracking_uri: "databricks"
+
+pipeline:
+  dataset_path: "/dbfs/tmp/diabetes-risk/pipeline_data/dataset.pkl"
+  train_output_path: "/dbfs/tmp/diabetes-risk/pipeline_data/train_output.pkl"

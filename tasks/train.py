@@ -57,8 +57,8 @@ if __name__ == "__main__" or "__file__" not in globals():
 
     run_id = dbutils.jobs.taskValues.get(taskKey="ingest", key="run_id")  # noqa: F821
 
-    DATASET_PATH = "/dbfs/tmp/diabetes-risk/pipeline_data/dataset.pkl"
-    TRAIN_OUTPUT_PATH = "/dbfs/tmp/diabetes-risk/pipeline_data/train_output.pkl"
+    DATASET_PATH = config["pipeline"]["dataset_path"]
+    TRAIN_OUTPUT_PATH = config["pipeline"]["train_output_path"]
 
     dataset = load_pickle(DATASET_PATH, dbutils=dbutils)  # noqa: F821
 
