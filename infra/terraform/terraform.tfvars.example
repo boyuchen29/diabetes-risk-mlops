@@ -1,0 +1,6 @@
+resource_group_name = "utility-ai-accelerator"
+location            = "eastus"
+api_key             = "replace-with-strong-random-key"
+databricks_token    = "dapi..."
+databricks_host     = "https://adb-xxxx.azuredatabricks.net"
+mlflow_run_id       = "replace-with-run-id"
