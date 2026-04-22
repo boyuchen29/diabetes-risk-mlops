@@ -49,3 +49,28 @@ def test_train_produces_model_and_metrics(tmp_path):
     with open(train_output_path, "rb") as f:
         train_output_pickled = pickle.load(f)
     assert set(train_output_pickled.keys()) == {"model", "best_subsets", "onehot_best", "X_test_enc2", "metrics"}
+
+
+def test_register_produces_scores_and_weights(tmp_path):
+    from tasks.ingest import run_ingest
+    from tasks.train import run_train
+    from risk_score.score import build_risk_scores
+
+    dataset_path = str(tmp_path / "dataset.pkl")
+    train_output_path = str(tmp_path / "train_output.pkl")
+
+    dataset = run_ingest(CONFIG, dataset_path)
+    train_output = run_train(dataset, CONFIG, train_output_path)
+
+    (_, _, _, _, _, _, _, _, df_categorized, y_encoded_all) = dataset
+    model = train_output["model"]
+    best_subsets = train_output["best_subsets"]
+    onehot_best = train_output["onehot_best"]
+
+    scores, weights, R = build_risk_scores(
+        model, df_categorized, best_subsets, onehot_best, y_encoded_all, CONFIG
+    )
+
+    assert set(scores.keys()) == set(best_subsets)
+    assert abs(sum(weights) - 1.0) < 1e-6
+    assert (R["RS"] >= 0).all() and (R["RS"] <= 100).all()
