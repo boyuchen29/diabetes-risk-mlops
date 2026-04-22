@@ -30,6 +30,18 @@ def _get_param(key: str, default):
         return str(default)
 
 
+def run_register(dataset: tuple, train_output: dict, config: dict) -> tuple:
+    (_, _, _, _, _, _, _, _, df_categorized, y_encoded_all) = dataset
+    model = train_output["model"]
+    best_subsets = train_output["best_subsets"]
+    onehot_best = train_output["onehot_best"]
+
+    scores, weights, R = build_risk_scores(
+        model, df_categorized, best_subsets, onehot_best, y_encoded_all, config
+    )
+    return scores, weights, R
+
+
 if __name__ == "__main__" or "__file__" not in globals():
     CONFIG_PATH = _root / "config.yaml"
     with open(CONFIG_PATH) as f:
@@ -50,10 +62,6 @@ if __name__ == "__main__" or "__file__" not in globals():
     with open(TRAIN_OUTPUT_PATH, "rb") as f:
         train_output = pickle.load(f)
 
-    (_, _, _, _, _, _, _, _, df_categorized, y_encoded_all) = dataset
-    model = train_output["model"]
-    best_subsets = train_output["best_subsets"]
-    onehot_best = train_output["onehot_best"]
     X_test_enc2 = train_output["X_test_enc2"]
     metrics = train_output["metrics"]
 
@@ -63,10 +71,8 @@ if __name__ == "__main__" or "__file__" not in globals():
 
     with mlflow.start_run(run_id=run_id):
         print("Computing risk scores...")
-        scores, weights, R = build_risk_scores(
-            model, df_categorized, best_subsets, onehot_best, y_encoded_all, config
-        )
-        log_scoring_artifacts(scores, weights, best_subsets)
+        scores, weights, R = run_register(dataset, train_output, config)
+        log_scoring_artifacts(scores, weights, train_output["best_subsets"])
 
         run_id_out = log_and_register_model(
             model,
