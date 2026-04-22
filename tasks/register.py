@@ -15,19 +15,11 @@ def _repo_root() -> Path:
 _root = _repo_root()
 sys.path.insert(0, str(_root / "src"))
 
-import yaml
 import mlflow
 from risk_score.score import build_risk_scores
 from risk_score.mlflow_utils import log_scoring_artifacts, log_and_register_model
+from tasks.config_utils import load_runtime_config
 from tasks.io_utils import load_pickle
-
-
-def _get_param(key: str, default):
-    try:
-        val = dbutils.widgets.get(key)  # noqa: F821
-        return val.strip() if val.strip() else str(default)
-    except Exception:
-        return str(default)
 
 
 def run_register(dataset: tuple, train_output: dict, config: dict) -> tuple:
@@ -43,14 +35,7 @@ def run_register(dataset: tuple, train_output: dict, config: dict) -> tuple:
 
 
 if __name__ == "__main__" or "__file__" not in globals():
-    CONFIG_PATH = _root / "config.yaml"
-    with open(CONFIG_PATH) as f:
-        config = yaml.safe_load(f)
-
-    config["data"]["test_size"] = float(_get_param("data.test_size", config["data"]["test_size"]))
-    config["data"]["random_state"] = int(_get_param("data.random_state", config["data"]["random_state"]))
-    config["model"]["max_iter"] = int(_get_param("model.max_iter", config["model"]["max_iter"]))
-    config["model"]["random_state"] = int(_get_param("model.random_state", config["model"]["random_state"]))
+    config = load_runtime_config(_root, dbutils_client=globals().get("dbutils"))
 
     run_id = dbutils.jobs.taskValues.get(taskKey="ingest", key="run_id")  # noqa: F821
 
