@@ -40,8 +40,8 @@ def run_train(dataset: tuple, config: dict, output_path: str) -> dict:
     )
 
     (model, best_subsets, onehot_best,
-     X_train_enc2, X_test_enc2,
-     y_train_enc2, y_test_enc2,
+     _, X_test_enc2,
+     _, _,
      metrics) = run_training(
         X_train_enc, X_test_enc, y_train_enc, y_test_enc,
         feature_names, df_categorized, config,
