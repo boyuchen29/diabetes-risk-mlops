@@ -27,7 +27,6 @@ def test_ingest_saves_dataset(tmp_path):
 
 
 def test_train_produces_model_and_metrics(tmp_path):
-    import pickle
     from tasks.ingest import run_ingest
     from tasks.train import run_train
 
