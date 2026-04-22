@@ -46,6 +46,18 @@ def test_weights_sum_to_one(scorer):
     assert abs(sum(WEIGHTS.values()) - 1.0) < 1e-6
 
 
+def test_init_raises_on_missing_scores_entry():
+    bad_scores = {k: v for k, v in SCORES.items() if k != "bmi"}
+    with pytest.raises(ValueError, match="missing from scores"):
+        Scorer(bad_scores, WEIGHTS, SCHEMA)
+
+
+def test_init_raises_on_missing_schema_entry():
+    bad_schema = [s for s in SCHEMA if s["feature"] != "bmi"]
+    with pytest.raises(ValueError, match="missing from schema"):
+        Scorer(SCORES, WEIGHTS, bad_schema)
+
+
 def test_from_mlflow_loads_artifacts(tmp_path, monkeypatch):
     (tmp_path / "scores.json").write_text(json.dumps(SCORES))
     (tmp_path / "weights.json").write_text(json.dumps(WEIGHTS))

@@ -8,6 +8,19 @@ class Scorer:
         self.scores = scores
         self.weights = weights
         self.schema = schema
+        self._validate()
+
+    def _validate(self) -> None:
+        schema_features = {spec["feature"] for spec in self.schema}
+        missing_scores = set(self.weights) - set(self.scores)
+        missing_schema = set(self.weights) - schema_features
+        errors = []
+        if missing_scores:
+            errors.append(f"features in weights missing from scores: {missing_scores}")
+        if missing_schema:
+            errors.append(f"features in weights missing from schema: {missing_schema}")
+        if errors:
+            raise ValueError("Inconsistent scoring artifacts — " + "; ".join(errors))
 
     @classmethod
     def from_mlflow(cls, run_id: str) -> "Scorer":
