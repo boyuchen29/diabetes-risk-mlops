@@ -19,6 +19,16 @@ az keyvault create \
 
 KV_ID=$(az keyvault show --name "$KV_NAME" --resource-group "$RG" --query id -o tsv)
 
+echo "==> Granting current user Key Vault Secrets Officer (needed to write secrets)..."
+USER_OID=$(az ad signed-in-user show --query id -o tsv)
+az role assignment create \
+  --assignee "$USER_OID" \
+  --role "Key Vault Secrets Officer" \
+  --scope "$KV_ID"
+
+echo "==> Waiting 60 seconds for role assignment to propagate..."
+sleep 60
+
 echo "==> Storing secrets in Key Vault..."
 az keyvault secret set --vault-name "$KV_NAME" --name "api-key"          --value "$API_KEY"
 az keyvault secret set --vault-name "$KV_NAME" --name "databricks-token" --value "$DATABRICKS_TOKEN"
