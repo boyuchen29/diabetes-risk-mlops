@@ -44,13 +44,15 @@ resource "azurerm_container_app" "api" {
   }
 
   secret {
-    name  = "api-key"
-    value = var.api_key
+    name                = "api-key"
+    key_vault_secret_id = azurerm_key_vault_secret.api_key.id
+    identity            = azurerm_user_assigned_identity.aca_identity.id
   }
 
   secret {
-    name  = "databricks-token"
-    value = var.databricks_token
+    name                = "databricks-token"
+    key_vault_secret_id = azurerm_key_vault_secret.databricks_token.id
+    identity            = azurerm_user_assigned_identity.aca_identity.id
   }
 
   template {
