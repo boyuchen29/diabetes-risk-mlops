@@ -64,18 +64,21 @@ az rest \
 rm -f "$TMPFILE"
 
 echo "==> Creating a subscription for testing..."
-az apim subscription create \
-  --resource-group "$RG" \
-  --service-name "$APIM_NAME" \
-  --subscription-id "test-subscription" \
-  --display-name "Test Subscription" \
-  --scope "/apis/diabetes-risk-api" \
-  --state active
+az rest \
+  --method PUT \
+  --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG/providers/Microsoft.ApiManagement/service/$APIM_NAME/subscriptions/test-subscription?api-version=2022-08-01" \
+  --body '{
+    "properties": {
+      "displayName": "Test Subscription",
+      "scope": "/apis/diabetes-risk-api",
+      "state": "active"
+    }
+  }' \
+  --headers "Content-Type=application/json"
 
-SUBSCRIPTION_KEY=$(az apim subscription show \
-  --resource-group "$RG" \
-  --service-name "$APIM_NAME" \
-  --subscription-id "test-subscription" \
+SUBSCRIPTION_KEY=$(az rest \
+  --method POST \
+  --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG/providers/Microsoft.ApiManagement/service/$APIM_NAME/subscriptions/test-subscription/listSecrets?api-version=2022-08-01" \
   --query "primaryKey" -o tsv)
 
 APIM_GW=$(az apim show \
