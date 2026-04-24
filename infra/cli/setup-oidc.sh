@@ -42,11 +42,13 @@ sleep 15
 
 SP_OBJECT_ID=$(az ad sp show --id "$APP_ID" --query id -o tsv)
 
-echo "==> Granting AcrPush on ACR..."
+echo "==> Granting Contributor on ACR..."
 ACR_ID=$(az acr show --name "$ACR_NAME" --resource-group "$RG" --query id -o tsv)
+# Contributor (not AcrPush) required: az acr build needs management-plane read
+# (registries/read) to queue a build task, which AcrPush does not include.
 az role assignment create \
   --assignee "$SP_OBJECT_ID" \
-  --role AcrPush \
+  --role Contributor \
   --scope "$ACR_ID"
 
 echo "==> Granting Contributor on Container App..."
