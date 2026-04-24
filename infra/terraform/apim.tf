@@ -7,14 +7,6 @@ resource "azurerm_api_management" "apim" {
   sku_name            = "Consumption_0"
 }
 
-resource "azurerm_api_management_backend" "aca" {
-  name                = "aca-backend"
-  resource_group_name = var.resource_group_name
-  api_management_name = azurerm_api_management.apim.name
-  protocol            = "http"
-  url                 = "https://${azurerm_container_app.api.ingress[0].fqdn}"
-}
-
 resource "azurerm_api_management_named_value" "backend_key" {
   name                = "backend-api-key"
   resource_group_name = var.resource_group_name
@@ -53,7 +45,7 @@ resource "azurerm_api_management_api_policy" "all_ops" {
 <policies>
   <inbound>
     <base />
-    <set-backend-service backend-id="aca-backend" />
+    <set-backend-service base-url="https://${azurerm_container_app.api.ingress[0].fqdn}" />
     <set-header name="Authorization" exists-action="override">
       <value>Bearer {{backend-api-key}}</value>
     </set-header>

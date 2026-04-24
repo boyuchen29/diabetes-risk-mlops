@@ -34,14 +34,6 @@ az apim api import \
   --specification-format OpenApi \
   --specification-url "$ACA_URL/openapi.json"
 
-echo "==> Creating backend pointing to ACA..."
-az apim backend create \
-  --resource-group "$RG" \
-  --service-name "$APIM_NAME" \
-  --backend-id "aca-backend" \
-  --url "$ACA_URL" \
-  --protocol http
-
 echo "==> Storing backend API key as encrypted Named Value..."
 az apim nv create \
   --resource-group "$RG" \
@@ -52,7 +44,7 @@ az apim nv create \
   --secret true
 
 echo "==> Applying inbound policy to all API operations..."
-POLICY_XML='<policies><inbound><base /><set-backend-service backend-id="aca-backend" /><set-header name="Authorization" exists-action="override"><value>Bearer {{backend-api-key}}</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>'
+POLICY_XML="<policies><inbound><base /><set-backend-service base-url=\"$ACA_URL\" /><set-header name=\"Authorization\" exists-action=\"override\"><value>Bearer {{backend-api-key}}</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>"
 
 az apim api policy create \
   --resource-group "$RG" \
