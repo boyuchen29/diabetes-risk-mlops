@@ -20,7 +20,7 @@ az apim create \
   --resource-group "$RG" \
   --location "$LOCATION" \
   --publisher-name "Diabetes Risk API" \
-  --publisher-email "xoxo.boyu@gmail.com" \
+  --publisher-email "boyu.chen@neudesic.com" \
   --sku-name Consumption
 
 echo "==> Importing OpenAPI spec from ACA..."
@@ -44,14 +44,24 @@ az apim nv create \
   --secret true
 
 echo "==> Applying inbound policy to all API operations..."
-POLICY_XML="<policies><inbound><base /><set-backend-service base-url=\"$ACA_URL\" /><set-header name=\"Authorization\" exists-action=\"override\"><value>Bearer {{backend-api-key}}</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>"
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+TMPFILE=$(mktemp /tmp/apim-policy-XXXXXX.json)
+cat > "$TMPFILE" <<EOF
+{
+  "properties": {
+    "format": "xml",
+    "value": "<policies><inbound><base /><set-backend-service base-url=\"$ACA_URL\" /><set-header name=\"Authorization\" exists-action=\"override\"><value>Bearer {{backend-api-key}}</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>"
+  }
+}
+EOF
 
-az apim api policy create \
-  --resource-group "$RG" \
-  --service-name "$APIM_NAME" \
-  --api-id "diabetes-risk-api" \
-  --value "$POLICY_XML" \
-  --format xml
+az rest \
+  --method PUT \
+  --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG/providers/Microsoft.ApiManagement/service/$APIM_NAME/apis/diabetes-risk-api/policies/policy?api-version=2022-08-01" \
+  --body "@$TMPFILE" \
+  --headers "Content-Type=application/json"
+
+rm -f "$TMPFILE"
 
 echo "==> Creating a subscription for testing..."
 az apim subscription create \
