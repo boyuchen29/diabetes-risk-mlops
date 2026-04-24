@@ -22,14 +22,20 @@ else
 fi
 
 echo "==> Configuring federated credential (trusts GitHub Actions on main branch)..."
-az ad app federated-credential create \
-  --id "$APP_ID" \
-  --parameters "{
-    \"name\": \"github-main\",
-    \"issuer\": \"https://token.actions.githubusercontent.com\",
-    \"subject\": \"repo:$GITHUB_ORG/$GITHUB_REPO:ref:refs/heads/main\",
-    \"audiences\": [\"api://AzureADTokenExchange\"]
-  }"
+EXISTING_CRED=$(az ad app federated-credential list --id "$APP_ID" \
+  --query "[?name=='github-main'].name" -o tsv)
+if [[ -z "$EXISTING_CRED" ]]; then
+  az ad app federated-credential create \
+    --id "$APP_ID" \
+    --parameters "{
+      \"name\": \"github-main\",
+      \"issuer\": \"https://token.actions.githubusercontent.com\",
+      \"subject\": \"repo:$GITHUB_ORG/$GITHUB_REPO:ref:refs/heads/main\",
+      \"audiences\": [\"api://AzureADTokenExchange\"]
+    }"
+else
+  echo "    Federated credential 'github-main' already exists. Skipping."
+fi
 
 echo "==> Waiting for service principal to propagate..."
 sleep 15
