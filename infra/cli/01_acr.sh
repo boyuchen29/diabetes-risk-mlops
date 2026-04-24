@@ -4,7 +4,6 @@ set -euo pipefail
 RG="utility-ai-accelerator"
 ACR_NAME="diabetesriskmlops"
 LOCATION="eastus"
-IMAGE="$ACR_NAME.azurecr.io/diabetes-risk-api:latest"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 echo "==> Creating Azure Container Registry..."
@@ -15,14 +14,13 @@ az acr create \
   --location "$LOCATION" \
   --admin-enabled false
 
-echo "==> Logging in to ACR..."
-az acr login --name "$ACR_NAME"
+# az acr build uploads the local context to ACR and builds the image there.
+# No local Docker daemon required — works in Azure Cloud Shell.
+echo "==> Building and pushing image via ACR Tasks..."
+az acr build \
+  --registry "$ACR_NAME" \
+  --image "diabetes-risk-api:latest" \
+  "$REPO_ROOT"
 
-echo "==> Building image..."
-docker build -t "$IMAGE" "$REPO_ROOT"
-
-echo "==> Pushing image..."
-docker push "$IMAGE"
-
-echo "==> Done. Image: $IMAGE"
+echo "==> Done."
 az acr repository list --name "$ACR_NAME" --output table
