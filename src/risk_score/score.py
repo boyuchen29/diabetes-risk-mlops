@@ -63,7 +63,7 @@ def _calculate_scores(coefficients, X_categorized, onehot_encoder) -> dict:
 
         min_c, max_c = min(coeffs), max(coeffs)
         scores[feature] = {
-            level: (1000.0 * (c - min_c) / (max_c - min_c) if max_c != min_c else 0.0)
+            level: (float(np.clip(1000.0 * (c - min_c) / (max_c - min_c), 0.0, 1000.0)) if max_c != min_c else 0.0)
             for level, c in zip(levels, coeffs)
         }
 
