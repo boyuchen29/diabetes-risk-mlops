@@ -3,7 +3,7 @@ resource "azurerm_api_management" "apim" {
   location            = var.location
   resource_group_name = var.resource_group_name
   publisher_name      = "Diabetes Risk API"
-  publisher_email     = "xoxo.boyu@gmail.com"
+  publisher_email     = "boyu.chen@neudesic.com"
   sku_name            = "Consumption_0"
 }
 
