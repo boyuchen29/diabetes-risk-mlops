@@ -48,12 +48,8 @@ jobs:
           az acr build \
             --registry diabetesriskmlops \
             --image "diabetes-risk-api:${{ github.sha }}" \
-            .
-          az acr import \
-            --name diabetesriskmlops \
-            --source "diabetesriskmlops.azurecr.io/diabetes-risk-api:${{ github.sha }}" \
             --image "diabetes-risk-api:latest" \
-            --force
+            .
 
       - name: Deploy to Container App
         run: |
@@ -64,21 +60,19 @@ jobs:
 
       - name: Wait for revision to be healthy
         run: |
-          REVISION=$(az containerapp show \
-            --name ca-diabetes-risk-api \
-            --resource-group utility-ai-accelerator \
-            --query "properties.latestRevisionName" -o tsv)
-
-          echo "Polling health state for revision: $REVISION"
-
           for i in $(seq 1 20); do
+            REVISION=$(az containerapp show \
+              --name ca-diabetes-risk-api \
+              --resource-group utility-ai-accelerator \
+              --query "properties.latestRevisionName" -o tsv)
+
             HEALTH=$(az containerapp revision show \
               --name ca-diabetes-risk-api \
               --resource-group utility-ai-accelerator \
               --revision "$REVISION" \
               --query "properties.healthState" -o tsv)
 
-            echo "Attempt $i/20 — health state: $HEALTH"
+            echo "Attempt $i/20 — revision: $REVISION — health state: $HEALTH"
 
             if [ "$HEALTH" = "Healthy" ]; then
               echo "Revision is healthy. Deployment complete."
