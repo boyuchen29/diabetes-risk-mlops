@@ -1,0 +1,95 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[api,dev]"
+
+      - name: Run tests
+        run: pytest
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # required for GitHub to issue the OIDC token
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Azure Container Apps CLI extension
+        run: az extension add --name containerapp --upgrade --yes
+
+      - name: Build and push image to ACR
+        run: |
+          az acr build \
+            --registry diabetesriskmlops \
+            --image "diabetes-risk-api:${{ github.sha }}" \
+            .
+          az acr import \
+            --name diabetesriskmlops \
+            --source "diabetesriskmlops.azurecr.io/diabetes-risk-api:${{ github.sha }}" \
+            --image "diabetes-risk-api:latest" \
+            --force
+
+      - name: Deploy to Container App
+        run: |
+          az containerapp update \
+            --name ca-diabetes-risk-api \
+            --resource-group utility-ai-accelerator \
+            --image "diabetesriskmlops.azurecr.io/diabetes-risk-api:${{ github.sha }}"
+
+      - name: Wait for revision to be healthy
+        run: |
+          REVISION=$(az containerapp show \
+            --name ca-diabetes-risk-api \
+            --resource-group utility-ai-accelerator \
+            --query "properties.latestRevisionName" -o tsv)
+
+          echo "Polling health state for revision: $REVISION"
+
+          for i in $(seq 1 20); do
+            HEALTH=$(az containerapp revision show \
+              --name ca-diabetes-risk-api \
+              --resource-group utility-ai-accelerator \
+              --revision "$REVISION" \
+              --query "properties.healthState" -o tsv)
+
+            echo "Attempt $i/20 — health state: $HEALTH"
+
+            if [ "$HEALTH" = "Healthy" ]; then
+              echo "Revision is healthy. Deployment complete."
+              exit 0
+            elif [ "$HEALTH" = "Unhealthy" ]; then
+              echo "Revision is unhealthy. Deployment failed."
+              exit 1
+            fi
+
+            sleep 15
+          done
+
+          echo "Timed out after 5 minutes waiting for revision to become healthy."
+          exit 1
